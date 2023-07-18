@@ -18,14 +18,14 @@ export type TransactionResponseJson = PubkeyToStringConverter<
   FunctionToNeverConverter<TransactionResponse>
 >;
 
-export type Board = TypeDef<
+export type Raffle = TypeDef<
   (typeof FOXY_RAFFLE_IDL.accounts)[0],
   IdlTypes<FoxyRaffleProgram>
 >;
 
-type DrawIxArguments = (typeof FOXY_RAFFLE_IDL.instructions)[1]['args'];
-export type DrawInstructionDecoded = {
-  [K in DrawIxArguments[number] as K['name']]: DecodeType<
+type createRaffleIxArguments = (typeof FOXY_RAFFLE_IDL.instructions)[1]['args'];
+export type createRaffleInstructionDecoded = {
+  [K in createRaffleIxArguments[number] as K['name']]: DecodeType<
     K['type'],
     IdlTypes<FoxyRaffleProgram>
   >;
