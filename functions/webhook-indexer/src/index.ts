@@ -3,9 +3,9 @@ import {bs58} from '@project-serum/anchor/dist/cjs/utils/bytes';
 import {firestore} from 'firebase-admin';
 import {getFirestore} from 'firebase-admin/firestore';
 import {app} from './firebase';
-import {BONK_BOARD_IDL} from './IDL';
+import {FOXY_RAFFLE_IDL} from './IDL';
 import {DrawInstructionDecoded, TransactionResponseJson} from './types';
-import {BB_CODER, BB_PROGRAM_ID, CONNECTION, getAccountKey} from './utils';
+import {FR_CODER, FR_PROGRAM_ID, CONNECTION, getAccountKey} from './utils';
 
 import './env';
 
@@ -29,11 +29,11 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
     for (const ix of instructions) {
       const ixProgram = accountKeys[ix.programIdIndex];
 
-      if (ixProgram !== BB_PROGRAM_ID.toString()) {
+      if (ixProgram !== FR_PROGRAM_ID.toString()) {
         continue;
       }
 
-      const decodedIx = BB_CODER.instruction.decode(bs58.decode(ix.data));
+      const decodedIx = FR_CODER.instruction.decode(bs58.decode(ix.data));
 
       if (!decodedIx) {
         console.log(`Failed to decode instruction for signature ${signature}`);
@@ -44,7 +44,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
         const drawIx = decodedIx.data as DrawInstructionDecoded;
 
         const user = getAccountKey(
-          BONK_BOARD_IDL,
+          FOXY_RAFFLE_IDL,
           'payer',
           'draw',
           ix.accounts,
@@ -52,7 +52,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
         );
 
         const boardAccount = getAccountKey(
-          BONK_BOARD_IDL,
+          FOXY_RAFFLE_IDL,
           'boardAccount',
           'draw',
           ix.accounts,

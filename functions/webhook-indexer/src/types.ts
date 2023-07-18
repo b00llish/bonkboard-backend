@@ -4,7 +4,7 @@ import {
   TypeDef,
 } from '@project-serum/anchor/dist/cjs/program/namespace/types';
 import {PublicKey, TransactionResponse} from '@solana/web3.js';
-import {BonkBoardProgram, BONK_BOARD_IDL} from './IDL';
+import {FoxyRaffleProgram, FOXY_RAFFLE_IDL} from './IDL';
 
 type SubstituteType<T, A, B> = T extends A
   ? B
@@ -19,14 +19,14 @@ export type TransactionResponseJson = PubkeyToStringConverter<
 >;
 
 export type Board = TypeDef<
-  (typeof BONK_BOARD_IDL.accounts)[0],
-  IdlTypes<BonkBoardProgram>
+  (typeof FOXY_RAFFLE_IDL.accounts)[0],
+  IdlTypes<FoxyRaffleProgram>
 >;
 
-type DrawIxArguments = (typeof BONK_BOARD_IDL.instructions)[1]['args'];
+type DrawIxArguments = (typeof FOXY_RAFFLE_IDL.instructions)[1]['args'];
 export type DrawInstructionDecoded = {
   [K in DrawIxArguments[number] as K['name']]: DecodeType<
     K['type'],
-    IdlTypes<BonkBoardProgram>
+    IdlTypes<FoxyRaffleProgram>
   >;
 };
