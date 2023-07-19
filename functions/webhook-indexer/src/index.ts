@@ -520,6 +520,23 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
       const collectProceedsV2Ix = decodedIx.data as collectProceedsV2InstructionDecoded;
       // console.log(`collectProceedsV2Ix: ${JSON.stringify(collectProceedsV2Ix)}`);
       
+      const preTokenBalances = txResponse?.meta?.preTokenBalances;
+      const postTokenBalances = txResponse?.meta?.postTokenBalances;
+      const accountKeys = txResponse?.transaction.message.accountKeys;
+
+      let pmt_mint: string | undefined = undefined;
+      let pmt_decimals: number | undefined = 0;
+      
+      if (postTokenBalances && postTokenBalances.length > 0) {
+          pmt_mint = postTokenBalances[0]?.mint?.toString();
+          pmt_decimals = postTokenBalances[0]?.uiTokenAmount?.decimals;
+  
+          // console.log(`Payment mint: ${pmt_mint}`);
+          // console.log(`Payment decimals: ${pmt_decimals}`);
+      } else {
+          console.log(`postTokenBalances is empty or doesn't exist.`);
+      }
+
       const raffle = getAccountKey(
           FOXY_RAFFLE_IDL,
           'raffle',
@@ -530,6 +547,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
 
       // console.log(`Proceeds from raffle: ${raffle.toString()}`);
 
+      // token account for raffle
       const proceeds = getAccountKey(
         FOXY_RAFFLE_IDL,
         'proceeds',
@@ -560,6 +578,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
 
       // console.log(`raffler (proceeds): ${raffler.toString()}`);
 
+      // token account of raffle host
       const creatorProceeds = getAccountKey(
         FOXY_RAFFLE_IDL,
         'creatorProceeds',
@@ -570,15 +589,18 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
 
       // console.log(`creatorProceeds: ${creatorProceeds.toString()}`);
 
+      let amountEarn = 0;
+      let amountVolume = 0;
+
       let end = {
         // dt_end: // calculated from epoch_time
         account: raffle.toString(),
         end_epoch_time: createdTimestamp ? createdTimestamp.toString() : undefined,
         tx_id: signature.toString(),        
-        // payment_mint: ,
-        amt_earn: creatorProceeds.toString(),
-        // amt_fee: // likely calculated
-        amt_volume: proceeds.toString(), 
+        payment_decimals: pmt_decimals ? pmt_decimals.toString() : undefined,
+        amt_earn: amountEarn ? amountEarn.toString() : undefined,
+        // amt_fee: // calculated
+        amt_volume: amountVolume ? amountVolume.toString() : undefined,
       };
 
       if (createdTimestamp != null) {
@@ -586,13 +608,81 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
       } else {
       console.log(`createdTimestamp is null or undefined for tx: ${signature}`);
       }
+      
+      let preBalance, postBalance;
+      let preBalanceSol, postBalanceSol;
 
+      let proceedsTokenAccount = creatorProceeds
+      
+      if (preTokenBalances && postTokenBalances && accountKeys) {
+          for (let i = 0; i < preTokenBalances.length; i++) {
+              let accountKey = accountKeys[preTokenBalances[i].accountIndex];
+              if (accountKey === proceedsTokenAccount.toString()) {
+                  preBalance = preTokenBalances[i]?.uiTokenAmount?.amount;
+                  postBalance = postTokenBalances[i]?.uiTokenAmount?.amount;
+                  break;
+              }
+          }
+      }
+
+      if (preBalance && postBalance) {
+        // Convert string balances to BigInt
+        let preBalanceBigInt = BigInt(preBalance);
+        let postBalanceBigInt = BigInt(postBalance);
+
+        // Assuming the balances are in the smallest unit of the token, we convert them to a more 'readable' format.
+        preBalanceSol = preBalanceBigInt / BigInt(Math.pow(10, pmt_decimals));
+        postBalanceSol = postBalanceBigInt / BigInt(Math.pow(10, pmt_decimals));
+
+        console.log('Pre Balance:', preBalanceSol);
+        console.log('Post Balance:', postBalanceSol);
+      } else {
+        console.log('Token account not found in transaction');
+      }
+      
+      if(preBalanceSol && postBalanceSol) {
+        end['amt_earn'] = (postBalanceSol - preBalanceSol).toString();
+      }
+      
+      proceedsTokenAccount = proceeds
+      
+      if (preTokenBalances && postTokenBalances && accountKeys) {
+          for (let i = 0; i < preTokenBalances.length; i++) {
+              let accountKey = accountKeys[preTokenBalances[i].accountIndex];
+              if (accountKey === proceedsTokenAccount.toString()) {
+                  preBalance = preTokenBalances[i]?.uiTokenAmount?.amount;
+                  postBalance = postTokenBalances[i]?.uiTokenAmount?.amount;
+                  break;
+              }
+          }
+      }
+
+      if (preBalance && postBalance) {
+        // Convert string balances to BigInt
+        let preBalanceBigInt = BigInt(preBalance);
+        let postBalanceBigInt = BigInt(postBalance);
+
+        // Assuming the balances are in the smallest unit of the token, we convert them to a more 'readable' format.
+        preBalanceSol = preBalanceBigInt / BigInt(Math.pow(10, pmt_decimals));
+        postBalanceSol = postBalanceBigInt / BigInt(Math.pow(10, pmt_decimals));
+
+        console.log('Pre Balance:', preBalanceSol);
+        console.log('Post Balance:', postBalanceSol);
+      } else {
+        console.log('Token account not found in transaction');
+      }
+      
+      if(preBalanceSol && postBalanceSol) {
+        end['amt_volume'] = (preBalanceSol - postBalanceSol).toString();
+      }
+      
       axios.post('https://raffflytics.ngrok.dev/rcv-endings-gcp', end, {
         headers: {
           'Authorization': `Bearer ${secretToken}`,
         }
       })
-    }
+    
+  }
     
     if (decodedIx.name === 'closeEntrants') {
       const closeEntrantsIx = decodedIx.data as closeEntrantsInstructionDecoded;
