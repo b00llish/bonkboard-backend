@@ -9,8 +9,8 @@ import {
   createRaffleInstructionDecoded,
   buyTicketsInstructionDecoded,
   addPrizeV2InstructionDecoded,
-  revealWinnersInstructionDecoded,
   closeEntrantsInstructionDecoded,
+  claimPrizeV2InstructionDecoded,
 } from './types';
 import {FR_CODER, FR_PROGRAM_ID, CONNECTION, getAccountKey} from './utils';
 
@@ -367,16 +367,16 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
         }).catch((err) => {
             console.error(err);
         });
-    }
+      }
     
-    if (decodedIx.name === 'revealWinners') {
-      const revealWinnersIx = decodedIx.data as revealWinnersInstructionDecoded;
-      console.log(`revealWinnersIx: ${JSON.stringify(revealWinnersIx)}`);
+    if (decodedIx.name === 'claimPrizeV2') {
+      const claimPrizeV2Ix = decodedIx.data as claimPrizeV2InstructionDecoded;
+      console.log(`claimPrizeV2Ix: ${JSON.stringify(claimPrizeV2Ix)}`);
       
       const raffle = getAccountKey(
           FOXY_RAFFLE_IDL,
           'raffle',
-          'revealWinners',
+          'claimPrizeV2',
           ix.accounts,
           accountKeys
         );
@@ -386,22 +386,82 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
       const entrants = getAccountKey(
         FOXY_RAFFLE_IDL,
         'entrants',
-        'revealWinners',
+        'claimPrizeV2',
         ix.accounts,
         accountKeys
       );
 
-      console.log(`entrants (winner): ${entrants.toString()}`);
+      console.log(`entrants (claimPrize): ${entrants.toString()}`);
 
-      const signer = getAccountKey(
+      const prize = getAccountKey(
         FOXY_RAFFLE_IDL,
-        'signer',
-        'revealWinners',
+        'prize',
+        'claimPrizeV2',
         ix.accounts,
         accountKeys
       );
 
-      console.log(`signer (winner): ${signer.toString()}`);
+      console.log(`prize (claimPrize): ${prize.toString()}`);
+
+      const winner = getAccountKey(
+        FOXY_RAFFLE_IDL,
+        'winner',
+        'claimPrizeV2',
+        ix.accounts,
+        accountKeys
+      );
+
+      console.log(`winner (claimPrize): ${winner.toString()}`);
+
+      // ticket account ??
+      // const entrants = getAccountKey(
+      //   FOXY_RAFFLE_IDL,
+      //   'entrants',
+      //   'revealWinners',
+      //   ix.accounts,
+      //   accountKeys
+      // );
+
+      // console.log(`entrants (winner): ${entrants.toString()}`);
+
+      // FFF wallet
+      // const signer = getAccountKey(
+      //   FOXY_RAFFLE_IDL,
+      //   'signer',
+      //   'revealWinners',
+      //   ix.accounts,
+      //   accountKeys
+      // );
+
+      // console.log(`signer (winner): ${signer.toString()}`);
+
+      const prizeIndex = claimPrizeV2Ix.prizeIndex;
+      console.log(`Prize index (claimPrize): ${prizeIndex.toString()}`);
+
+      const ticketIndex = claimPrizeV2Ix.ticketIndex;
+      console.log(`Prize index (claimPrize): ${ticketIndex.toString()}`);
+
+      let raffleWinner = {
+        // dt_win: // calculated from epoch_time
+        account: raffle.toString(),
+        winner_wallet: winner.toString(),
+        // tx_id: signature.toString(),        
+        epoch_time: createdTimestamp ? createdTimestamp.toString() : undefined,
+      };
+
+      if (createdTimestamp != null) {
+        raffleWinner['epoch_time'] = createdTimestamp.toString();
+      } else {
+        console.log(`createdTimestamp is null or undefined for tx: ${signature}`);
+      }
+
+      axios.post('https://raffflytics.ngrok.dev/rcv-winners-gcp', winner, {
+      headers: {
+          'Authorization': `Bearer ${secretToken}`,
+      }
+      })
+
+
     }
     
     if (decodedIx.name === 'closeEntrants') {
@@ -498,6 +558,5 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
       
     }
   }
-
   res.send('OK');
 }

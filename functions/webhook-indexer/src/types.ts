@@ -83,5 +83,14 @@ export type addPrizeV2InstructionDecoded = {
 
 
 // type cancelRaffleV2IxArguments = (typeof FOXY_RAFFLE_IDL.instructions)[7]['args'];
-// type claimPrizeV2IxArguments = (typeof FOXY_RAFFLE_IDL.instructions)[8]['args'];
+
+
+type claimPrizeV2IxArguments = (typeof FOXY_RAFFLE_IDL.instructions)[8]['args'];
+export type claimPrizeV2InstructionDecoded = {
+  [K in addPrizeV2IxArguments[number] as K['name']]: DecodeType<
+    K['type'],
+    IdlTypes<FoxyRaffleProgram>
+  >;
+};
+
 // type collectProceedsV2IxArguments = (typeof FOXY_RAFFLE_IDL.instructions)[9]['args'];
