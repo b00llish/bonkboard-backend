@@ -598,85 +598,9 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
         );
 
       console.log(`Raffle (closeEntrants): ${raffle.toString()}`);
-
+      }
     // if not a category handled above, log the instruction data
     console.log(`Decoded instruction: ${JSON.stringify(decodedIx)}`);
-    
-      }
-      // this code below was all within the create raffle end bracket
-        // let lastSeenSlot = 0;
-        // let encodedBoardState: string | undefined = undefined;
-        // while (lastSeenSlot < slot) {
-        //   const result = await CONNECTION.getAccountInfoAndContext(
-        //     boardAccount,
-        //     'confirmed'
-        //   );
-
-        //   encodedBoardState = bs58.encode(result.value!.data);
-        //   lastSeenSlot = result.context.slot;
-
-        //   if (lastSeenSlot >= slot) {
-        //     break;
-        //   } else {
-        //     await new Promise(resolve => setTimeout(resolve, 250));
-        //   }
-        // }
-
-        // const fs = getFirestore(app);
-        // const userRef = fs.collection('users').doc(user.toString());
-        // const statsRef = fs.collection('stats').doc('mainnet-beta');
-        // const activitiesRef = fs.collection('activity').doc(signature);
-        // const boardRef = fs.collection('board').doc('mainnet-beta');
-
-        // const numOfPixelsPlaced = drawIx.pixels.length;
-        // const bonkBurned = 0;
-        // const bonkPaid = drawIx.pixels.length * 10_000;
-
-        // for (const pixel of drawIx.pixels) {
-        //   console.log(
-        //     `User: ${user}, Pixel position: ${pixel.coord.x}, ${pixel.coord.y}, Pixel color: ${pixel.color.r} ${pixel.color.g} ${pixel.color.b}`
-        //   );
-        // }
-
-        // await Promise.all([
-        //   activitiesRef.set({
-        //     slot: slot,
-        //     signature: signature,
-        //     timestamp: blocktime,
-        //     user: user.toString(),
-        //     activities: drawIx.pixels.map(pixel => ({
-        //       x: pixel.coord.x,
-        //       y: pixel.coord.y,
-        //       rgb: `rgb(${pixel.color.r}, ${pixel.color.g}, ${pixel.color.b})`,
-        //     })),
-        //   }),
-        //   userRef.set(
-        //     {
-        //       lastUpdatedSlot: slot,
-        //       lastUpdatedSignature: signature,
-        //       lastUpdated: blocktime,
-        //       pixelsPlaced: firestore.FieldValue.increment(numOfPixelsPlaced),
-        //       bonkBurned: firestore.FieldValue.increment(bonkBurned),
-        //       bonkPaid: firestore.FieldValue.increment(bonkPaid),
-        //     },
-        //     {merge: true}
-        //   ),
-        //   statsRef.set(
-        //     {
-        //       pixelsPlaced: firestore.FieldValue.increment(numOfPixelsPlaced),
-        //       bonkBurned: firestore.FieldValue.increment(bonkBurned),
-        //       bonkPaid: firestore.FieldValue.increment(bonkPaid),
-        //     },
-        //     {merge: true}
-        //   ),
-        //   boardRef.set({
-        //     lastUpdatedSlot: slot,
-        //     lastUpdatedSignature: signature,
-        //     lastUpdated: blocktime,
-        //     boardState: encodedBoardState,
-        //   }),
-        // ]);
-      
     }
   }
   res.send('OK');
