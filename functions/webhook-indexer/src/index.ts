@@ -602,6 +602,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
         payment_decimals: pmt_decimals ? pmt_decimals.toString() : undefined,
         amt_earn: amountEarn ? amountEarn.toString() : undefined,
         // amt_fee: // calculated
+        payment_mint: pmt_mint ? pmt_mint.toString() : undefined,
         amt_volume: amountVolume ? amountVolume.toString() : undefined,
       };
 
