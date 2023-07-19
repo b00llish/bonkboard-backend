@@ -57,7 +57,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
 
       if (decodedIx.name === 'createRaffle') {
         const createRaffleIx = decodedIx.data as createRaffleInstructionDecoded;
-        console.log(`createRaffleIx: ${JSON.stringify(createRaffleIx)}`);
+        // console.log(`createRaffleIx: ${JSON.stringify(createRaffleIx)}`);
 
         const host_wallet = getAccountKey(
           FOXY_RAFFLE_IDL,
@@ -67,7 +67,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
           accountKeys
         );
 
-        console.log(`Host wallet: ${host_wallet.toString()}`);
+        // console.log(`Host wallet: ${host_wallet.toString()}`);
 
         // unsure
         // const raffler = getAccountKey(
@@ -88,7 +88,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
           accountKeys
         );
 
-        console.log(`Raffle account: ${raffleAccount.toString()}`);
+        // console.log(`Raffle account: ${raffleAccount.toString()}`);
 
         const proceedsMint = getAccountKey(
           FOXY_RAFFLE_IDL,
@@ -98,20 +98,30 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
           accountKeys
           );
 
-        console.log(`Proceeds mint: ${proceedsMint.toString()}`);
+        // console.log(`Proceeds mint: ${proceedsMint.toString()}`);
 
         const endTimestamp = createRaffleIx.endTimestamp;
-        console.log(`End timestamp: ${endTimestamp.toString()}`);
+        // console.log(`End timestamp: ${endTimestamp.toString()}`);
 
         const ticketPrice = createRaffleIx.ticketPrice;
-        console.log(`Ticket price: ${ticketPrice.toString()}`);
+        // console.log(`Ticket price: ${ticketPrice.toString()}`);
 
         const maxEntrants = createRaffleIx.maxEntrants;
-        console.log(`Max entrants: ${maxEntrants.toString()}`);
+        // console.log(`Max entrants: ${maxEntrants.toString()}`);
 
         // probably a limit on the number of tickets a user can buy
         // const limit = createRaffleIx.limit;
         // console.log(`Limit: ${limit.toString()}`);
+        
+        let pmt_decimals: string | undefined = undefined;
+
+        const postTokenBalances = txResponse?.meta?.postTokenBalances;
+        if (postTokenBalances && postTokenBalances.length > 0) {
+            pmt_decimals = postTokenBalances[0]?.uiTokenAmount?.decimals?.toString();
+            // console.log(`Payment decimals: ${pmt_decimals}`);
+        } else {
+            console.log(`postTokenBalances is empty or doesn't exist.`);
+        }
 
         let raffle = {
           
@@ -122,6 +132,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
           end_epoch: endTimestamp.toString(),
           tix_price: ticketPrice.toString(),
           tix_total: maxEntrants.toString(),
+          payment_decimals: pmt_decimals ? pmt_decimals.toString() : undefined,
           // limit: limit.toString(),
           tx_id: signature.toString(),
           // slot: slot.toString(),
@@ -168,7 +179,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
 
       if (decodedIx.name === 'addPrizeV2') {
         const addPrizeIx = decodedIx.data as addPrizeV2InstructionDecoded;
-        console.log(`buyTicketsIx: ${JSON.stringify(addPrizeIx)}`);
+        // console.log(`buyTicketsIx: ${JSON.stringify(addPrizeIx)}`);
 
         const raffleAccount = getAccountKey(
           FOXY_RAFFLE_IDL,
@@ -178,7 +189,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
           accountKeys
         );
 
-        console.log(`Added prize to raffle: ${raffleAccount.toString()}`);
+        // console.log(`Added prize to raffle: ${raffleAccount.toString()}`);
 
         const prizeMint = getAccountKey(
           FOXY_RAFFLE_IDL,
@@ -188,7 +199,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
           accountKeys
         );
 
-        console.log(`NFT mint: ${prizeMint.toString()}`);
+        // console.log(`NFT mint: ${prizeMint.toString()}`);
 
         // does not appear to actually be metadata, e.g., Cc2ML8qu1AktwiFhvLPJQpy2AT4k2VpMWw3gggx1eTgr
         // const nftMetadata = getAccountKey(
@@ -250,8 +261,8 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
             pmt_mint = postTokenBalances[0]?.mint?.toString();
             pmt_decimals = postTokenBalances[0]?.uiTokenAmount?.decimals?.toString();
     
-            console.log(`Payment mint: ${pmt_mint}`);
-            console.log(`Payment decimals: ${pmt_decimals}`);
+            // console.log(`Payment mint: ${pmt_mint}`);
+            // console.log(`Payment decimals: ${pmt_decimals}`);
         } else {
             console.log(`postTokenBalances is empty or doesn't exist.`);
         }
@@ -373,7 +384,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
     
     if (decodedIx.name === 'cancelRaffleV2') {
       const cancelRaffleV2Ix = decodedIx.data as cancelRaffleV2InstructionDecoded;
-      console.log(`cancelRaffleV2Ix: ${JSON.stringify(cancelRaffleV2Ix)}`);
+      // console.log(`cancelRaffleV2Ix: ${JSON.stringify(cancelRaffleV2Ix)}`);
       
       const raffle = getAccountKey(
           FOXY_RAFFLE_IDL,
@@ -383,7 +394,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
           accountKeys
         );
 
-      console.log(`Raffle (cancel): ${raffle.toString()}`);
+      // console.log(`Raffle (cancel): ${raffle.toString()}`);
 
       let cancel = {
         //dt_cancel: // calculated from epoch_time
@@ -414,7 +425,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
     
     if (decodedIx.name === 'claimPrizeV2') {
       const claimPrizeV2Ix = decodedIx.data as claimPrizeV2InstructionDecoded;
-      console.log(`claimPrizeV2Ix: ${JSON.stringify(claimPrizeV2Ix)}`);
+      // console.log(`claimPrizeV2Ix: ${JSON.stringify(claimPrizeV2Ix)}`);
       
       const raffle = getAccountKey(
           FOXY_RAFFLE_IDL,
@@ -424,7 +435,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
           accountKeys
         );
 
-      console.log(`Winner of: ${raffle.toString()}`);
+      // console.log(`Winner of: ${raffle.toString()}`);
 
       const entrants = getAccountKey(
         FOXY_RAFFLE_IDL,
@@ -434,7 +445,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
         accountKeys
       );
 
-      console.log(`entrants (claimPrize): ${entrants.toString()}`);
+      // console.log(`entrants (claimPrize): ${entrants.toString()}`);
 
       const prize = getAccountKey(
         FOXY_RAFFLE_IDL,
@@ -444,7 +455,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
         accountKeys
       );
 
-      console.log(`prize (claimPrize): ${prize.toString()}`);
+      // console.log(`prize (claimPrize): ${prize.toString()}`);
 
       const winner = getAccountKey(
         FOXY_RAFFLE_IDL,
@@ -454,7 +465,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
         accountKeys
       );
 
-      console.log(`winner (claimPrize): ${winner.toString()}`);
+      // console.log(`winner (claimPrize): ${winner.toString()}`);
 
       // ticket account ??
       // const entrants = getAccountKey(
@@ -479,16 +490,15 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
       // console.log(`signer (winner): ${signer.toString()}`);
 
       const prizeIndex = claimPrizeV2Ix.prizeIndex;
-      console.log(`Prize index (claimPrize): ${prizeIndex.toString()}`);
+      // console.log(`Prize index (claimPrize): ${prizeIndex.toString()}`);
 
       const ticketIndex = claimPrizeV2Ix.ticketIndex;
-      console.log(`Prize index (claimPrize): ${ticketIndex.toString()}`);
+      // console.log(`Prize index (claimPrize): ${ticketIndex.toString()}`);
 
       let raffleWinner = {
         // dt_win: // calculated from epoch_time
         account: raffle.toString(),
         winner_wallet: winner.toString(),
-        // tx_id: signature.toString(),        
         epoch_time: createdTimestamp ? createdTimestamp.toString() : undefined,
       };
 
@@ -501,15 +511,14 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
       axios.post('https://raffflytics.ngrok.dev/rcv-winners-gcp', winner, {
       headers: {
           'Authorization': `Bearer ${secretToken}`,
-      }
-      })
-
-
+          }
+        }
+      )
     }
 
     if (decodedIx.name === 'collectProceedsV2') {
       const collectProceedsV2Ix = decodedIx.data as collectProceedsV2InstructionDecoded;
-      console.log(`collectProceedsV2Ix: ${JSON.stringify(collectProceedsV2Ix)}`);
+      // console.log(`collectProceedsV2Ix: ${JSON.stringify(collectProceedsV2Ix)}`);
       
       const raffle = getAccountKey(
           FOXY_RAFFLE_IDL,
@@ -519,7 +528,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
           accountKeys
         );
 
-      console.log(`Proceeds from raffle: ${raffle.toString()}`);
+      // console.log(`Proceeds from raffle: ${raffle.toString()}`);
 
       const proceeds = getAccountKey(
         FOXY_RAFFLE_IDL,
@@ -529,7 +538,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
         accountKeys
       );
 
-      console.log(`Proceeds: ${proceeds.toString()}`);
+      // console.log(`Proceeds: ${proceeds.toString()}`);
 
       const creator = getAccountKey(
         FOXY_RAFFLE_IDL,
@@ -539,7 +548,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
         accountKeys
       );
 
-      console.log(`creator (proceeds): ${creator.toString()}`);
+      // console.log(`creator (proceeds): ${creator.toString()}`);
 
       const raffler = getAccountKey(
         FOXY_RAFFLE_IDL,
@@ -549,7 +558,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
         accountKeys
       );
 
-      console.log(`raffler (proceeds): ${raffler.toString()}`);
+      // console.log(`raffler (proceeds): ${raffler.toString()}`);
 
       const creatorProceeds = getAccountKey(
         FOXY_RAFFLE_IDL,
@@ -559,10 +568,10 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
         accountKeys
       );
 
-      console.log(`creatorProceeds: ${creatorProceeds.toString()}`);
+      // console.log(`creatorProceeds: ${creatorProceeds.toString()}`);
 
       let end = {
-        // dt_win: // calculated from epoch_time
+        // dt_end: // calculated from epoch_time
         account: raffle.toString(),
         end_epoch_time: createdTimestamp ? createdTimestamp.toString() : undefined,
         tx_id: signature.toString(),        
@@ -587,7 +596,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
     
     if (decodedIx.name === 'closeEntrants') {
       const closeEntrantsIx = decodedIx.data as closeEntrantsInstructionDecoded;
-      console.log(`closeEntrantsIx: ${JSON.stringify(closeEntrantsIx)}`);
+      // console.log(`closeEntrantsIx: ${JSON.stringify(closeEntrantsIx)}`);
       
       const raffle = getAccountKey(
           FOXY_RAFFLE_IDL,
@@ -597,7 +606,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
           accountKeys
         );
 
-      console.log(`Raffle (closeEntrants): ${raffle.toString()}`);
+      // console.log(`Raffle (closeEntrants): ${raffle.toString()}`);
       }
     // if not a category handled above, log the instruction data
     console.log(`Decoded instruction: ${JSON.stringify(decodedIx)}`);
