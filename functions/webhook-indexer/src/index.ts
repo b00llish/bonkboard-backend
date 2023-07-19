@@ -508,7 +508,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
         console.log(`createdTimestamp is null or undefined for tx: ${signature}`);
       }
 
-      axios.post('https://raffflytics.ngrok.dev/rcv-winners-gcp', winner, {
+      axios.post('https://raffflytics.ngrok.dev/rcv-winners-gcp', raffleWinner, {
       headers: {
           'Authorization': `Bearer ${secretToken}`,
           }
