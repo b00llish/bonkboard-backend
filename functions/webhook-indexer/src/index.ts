@@ -10,7 +10,9 @@ import {
   buyTicketsInstructionDecoded,
   addPrizeV2InstructionDecoded,
   closeEntrantsInstructionDecoded,
+  cancelRaffleV2InstructionDecoded,
   claimPrizeV2InstructionDecoded,
+  collectProceedsV2InstructionDecoded,
 } from './types';
 import {FR_CODER, FR_PROGRAM_ID, CONNECTION, getAccountKey} from './utils';
 
@@ -368,6 +370,84 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
             console.error(err);
         });
       }
+    
+    if (decodedIx.name === 'collectProceedsV2') {
+      const collectProceedsV2Ix = decodedIx.data as collectProceedsV2InstructionDecoded;
+      console.log(`collectProceedsV2Ix: ${JSON.stringify(collectProceedsV2Ix)}`);
+      
+      const raffle = getAccountKey(
+          FOXY_RAFFLE_IDL,
+          'raffle',
+          'collectProceedsV2',
+          ix.accounts,
+          accountKeys
+        );
+
+      console.log(`Proceeds from raffle: ${raffle.toString()}`);
+
+      const proceeds = getAccountKey(
+        FOXY_RAFFLE_IDL,
+        'proceeds',
+        'collectProceedsV2',
+        ix.accounts,
+        accountKeys
+      );
+
+      console.log(`Proceeds: ${proceeds.toString()}`);
+
+      const creator = getAccountKey(
+        FOXY_RAFFLE_IDL,
+        'creator',
+        'collectProceedsV2',
+        ix.accounts,
+        accountKeys
+      );
+
+      console.log(`creator (proceeds): ${creator.toString()}`);
+
+      const raffler = getAccountKey(
+        FOXY_RAFFLE_IDL,
+        'raffler',
+        'collectProceedsV2',
+        ix.accounts,
+        accountKeys
+      );
+
+      console.log(`raffler (proceeds): ${raffler.toString()}`);
+
+      const creatorProceeds = getAccountKey(
+        FOXY_RAFFLE_IDL,
+        'creatorProceeds',
+        'collectProceedsV2',
+        ix.accounts,
+        accountKeys
+      );
+
+      console.log(`creatorProceeds: ${creatorProceeds.toString()}`);
+
+      let collectProceeds = {
+        // dt_win: // calculated from epoch_time
+        account: raffle.toString(),
+        end_epoch_time: createdTimestamp ? createdTimestamp.toString() : undefined,
+        tx_id: signature.toString(),        
+        // payment_mint: ,
+        // amt_earn:
+        // amt_fee: // likely calculated
+        //
+      };
+
+      if (createdTimestamp != null) {
+        collectProceeds['end_epoch_time'] = createdTimestamp.toString();
+      } else {
+      console.log(`createdTimestamp is null or undefined for tx: ${signature}`);
+      }
+
+      axios.post('https://raffflytics.ngrok.dev/rcv-winners-gcp', winner, {
+        headers: {
+          'Authorization': `Bearer ${secretToken}`,
+        }
+      })
+    }
     
     if (decodedIx.name === 'claimPrizeV2') {
       const claimPrizeV2Ix = decodedIx.data as claimPrizeV2InstructionDecoded;
