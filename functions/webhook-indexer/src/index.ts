@@ -8,6 +8,8 @@ import { Decimal } from 'decimal.js';
 import {
   TransactionResponseJson,
   createRaffleInstructionDecoded,
+  extendRaffleInstructionDecoded,
+  updateRaffleInstructionDecoded,
   buyTicketsInstructionDecoded,
   addPrizeV2InstructionDecoded,
   closeEntrantsInstructionDecoded,
@@ -44,12 +46,11 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
       const ixProgram = accountKeys[ix.programIdIndex];
 
       if (ixProgram !== FR_PROGRAM_ID.toString()) {
-        // console.log(`Program ID ${ixProgram} is not Foxy Raffle`);
+        console.log(`Program ID ${ixProgram} is not Foxy Rafffle`);
         continue;
       }
 
       const decodedIx = FR_CODER.instruction.decode(bs58.decode(ix.data));
-
 
       if (!decodedIx) {
         console.log(`Failed to decode instruction for signature ${signature}`);
@@ -249,6 +250,97 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
             console.error(err);
         }); 
       }
+
+      if (decodedIx.name === 'extendRaffle') {
+        const extendRaffleIx = decodedIx.data as extendRaffleInstructionDecoded;
+        console.log(`createRaffleIx: ${JSON.stringify(extendRaffleIx)}`);
+
+        const account = getAccountKey(
+          FOXY_RAFFLE_IDL,
+          'raffle',
+          'extendRaffle',
+          ix.accounts,
+          accountKeys
+        );
+        
+        console.log(`Raffle extended: ${account.toString()}`);
+        
+        const newEndTimestamp = extendRaffleIx.timestamp;
+        console.log(`New end timestamp: ${newEndTimestamp.toString()}`);
+      
+        let extension = {
+          account: account.toString(),
+          new_end_epoch: newEndTimestamp.toString(),
+          tx_id: signature.toString(),
+        };
+
+
+        axios.post('https://raffflytics.ngrok.dev/rcv-raffle-updates-gcp',
+        {
+          type: 'extendRaffle',
+          data: extension,
+        }, 
+        {
+        headers: {
+            'Authorization': `Bearer ${secretToken}`,
+        }
+        })
+        .then((res) => {
+            console.log(`Status: ${res.status}`);
+            console.log('Body: ', res.data);
+        }).catch((err) => {
+            console.error(err);
+        }); 
+
+      }
+
+      if (decodedIx.name === 'updateRaffle') {
+        const updateRaffleIx = decodedIx.data as   updateRaffleInstructionDecoded;
+        console.log(`createRaffleIx: ${JSON.stringify(updateRaffleIx)}`);
+
+        const account = getAccountKey(
+          FOXY_RAFFLE_IDL,
+          'raffle',
+          'updateRaffle',
+          ix.accounts,
+          accountKeys
+        );
+        
+        console.log(`Raffle updated: ${account.toString()}`);
+        
+        const newPrice = updateRaffleIx.price;
+        console.log(`New end timestamp: ${newPrice.toString()}`);
+
+        const newSupply = updateRaffleIx.price;
+        console.log(`New end timestamp: ${newSupply.toString()}`);
+      
+        let update = {
+          account: account.toString(),
+          new_price: newPrice.toString(),
+          new_supply: newSupply.toString(),
+          tx_id: signature.toString(),
+        };
+
+
+        axios.post('https://raffflytics.ngrok.dev/rcv-raffle-updates-gcp',
+        {
+          type: 'updateRaffle',
+          data: update,
+        }, 
+        {
+        headers: {
+            'Authorization': `Bearer ${secretToken}`,
+        }
+        })
+        .then((res) => {
+            console.log(`Status: ${res.status}`);
+            console.log('Body: ', res.data);
+        }).catch((err) => {
+            console.error(err);
+        }); 
+
+      }
+        
       
       if (decodedIx.name === 'buyTickets') {
         const buyTicketsIx = decodedIx.data as buyTicketsInstructionDecoded;
@@ -600,10 +692,10 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
         end_epoch_time: createdTimestamp ? createdTimestamp.toString() : undefined,
         tx_id: signature.toString(),        
         payment_decimals: pmt_decimals ? pmt_decimals.toString() : undefined,
-        amt_earn: amountEarn ? amountEarn.toString() : undefined,
+        amt_earn: amountEarn ? amountEarn.toString() : 0,
         // amt_fee: // calculated
         payment_mint: pmt_mint ? pmt_mint.toString() : undefined,
-        amt_volume: amountVolume ? amountVolume.toString() : undefined,
+        amt_volume: amountVolume ? amountVolume.toString() : 0,
       };
 
       if (createdTimestamp != null) {

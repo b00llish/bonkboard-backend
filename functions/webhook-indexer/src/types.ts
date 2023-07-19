@@ -46,8 +46,21 @@ export type createRaffleInstructionDecoded = {
   >;
 };
 
-// type extendRaffleIxArguments = (typeof FOXY_RAFFLE_IDL.instructions)[1]['args'];
-// type updateRaffleIxArguments = (typeof FOXY_RAFFLE_IDL.instructions)[2]['args'];
+type extendRaffleIxArguments = (typeof FOXY_RAFFLE_IDL.instructions)[1]['args'];
+export type extendRaffleInstructionDecoded = {
+  [K in extendRaffleIxArguments[number] as K['name']]: DecodeType<
+    K['type'],
+    IdlTypes<FoxyRaffleProgram>
+  >;
+};
+
+type updateRaffleIxArguments = (typeof FOXY_RAFFLE_IDL.instructions)[2]['args'];
+export type updateRaffleInstructionDecoded = {
+  [K in updateRaffleIxArguments[number] as K['name']]: DecodeType<
+    K['type'],
+    IdlTypes<FoxyRaffleProgram>
+  >;
+};
 
 type buyTicketsIxArguments = (typeof FOXY_RAFFLE_IDL.instructions)[3]['args'];
 export type buyTicketsInstructionDecoded = {
