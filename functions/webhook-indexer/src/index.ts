@@ -4,6 +4,7 @@ import {firestore} from 'firebase-admin';
 import {getFirestore} from 'firebase-admin/firestore';
 import {app} from './firebase';
 import {FOXY_RAFFLE_IDL} from './IDL';
+import { Decimal } from 'decimal.js';
 import {
   TransactionResponseJson,
   createRaffleInstructionDecoded,
@@ -518,7 +519,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
 
     if (decodedIx.name === 'collectProceedsV2') {
       const collectProceedsV2Ix = decodedIx.data as collectProceedsV2InstructionDecoded;
-      // console.log(`collectProceedsV2Ix: ${JSON.stringify(collectProceedsV2Ix)}`);
+      console.log(`collectProceedsV2Ix: ${JSON.stringify(collectProceedsV2Ix)}`);
       
       const preTokenBalances = txResponse?.meta?.preTokenBalances;
       const postTokenBalances = txResponse?.meta?.postTokenBalances;
@@ -531,8 +532,8 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
           pmt_mint = postTokenBalances[0]?.mint?.toString();
           pmt_decimals = postTokenBalances[0]?.uiTokenAmount?.decimals;
   
-          // console.log(`Payment mint: ${pmt_mint}`);
-          // console.log(`Payment decimals: ${pmt_decimals}`);
+          console.log(`Payment mint (proceeds): ${pmt_mint}`);
+          console.log(`Payment decimals (proceeds): ${pmt_decimals}`);
       } else {
           console.log(`postTokenBalances is empty or doesn't exist.`);
       }
@@ -545,7 +546,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
           accountKeys
         );
 
-      // console.log(`Proceeds from raffle: ${raffle.toString()}`);
+      console.log(`Proceeds from raffle: ${raffle.toString()}`);
 
       // token account for raffle
       const proceeds = getAccountKey(
@@ -556,7 +557,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
         accountKeys
       );
 
-      // console.log(`Proceeds: ${proceeds.toString()}`);
+      console.log(`Proceeds (s/b token acct for raffle): ${proceeds.toString()}`);
 
       const creator = getAccountKey(
         FOXY_RAFFLE_IDL,
@@ -566,15 +567,16 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
         accountKeys
       );
 
-      // console.log(`creator (proceeds): ${creator.toString()}`);
+      console.log(`creator (proceeds - unsure what this is): ${creator.toString()}`);
 
-      const raffler = getAccountKey(
-        FOXY_RAFFLE_IDL,
-        'raffler',
-        'collectProceedsV2',
-        ix.accounts,
-        accountKeys
-      );
+      // unsure what this is, but not relevant. its an account
+      // const raffler = getAccountKey(
+      //   FOXY_RAFFLE_IDL,
+      //   'raffler',
+      //   'collectProceedsV2',
+      //   ix.accounts,
+      //   accountKeys
+      // );
 
       // console.log(`raffler (proceeds): ${raffler.toString()}`);
 
@@ -587,7 +589,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
         accountKeys
       );
 
-      // console.log(`creatorProceeds: ${creatorProceeds.toString()}`);
+      console.log(`creatorProceeds (s/b token acct for host): ${creatorProceeds.toString()}`);
 
       let amountEarn = 0;
       let amountVolume = 0;
@@ -627,21 +629,22 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
 
       if (preBalance && postBalance) {
         // Convert string balances to BigInt
-        let preBalanceBigInt = BigInt(preBalance);
-        let postBalanceBigInt = BigInt(postBalance);
+        let preBalanceDecimal = new Decimal(preBalance);
+        let postBalanceDecimal = new Decimal(postBalance);
 
         // Assuming the balances are in the smallest unit of the token, we convert them to a more 'readable' format.
-        preBalanceSol = preBalanceBigInt / BigInt(Math.pow(10, pmt_decimals));
-        postBalanceSol = postBalanceBigInt / BigInt(Math.pow(10, pmt_decimals));
+        preBalanceSol = preBalanceDecimal.dividedBy(Decimal.pow(10, pmt_decimals));
+        postBalanceSol = postBalanceDecimal.dividedBy(Decimal.pow(10, pmt_decimals));
 
-        console.log('Pre Balance:', preBalanceSol);
-        console.log('Post Balance:', postBalanceSol);
+        console.log('Pre Balance (earn):', preBalanceSol);
+        console.log('Post Balance (earn):', postBalanceSol);
       } else {
         console.log('Token account not found in transaction');
       }
       
       if(preBalanceSol && postBalanceSol) {
-        end['amt_earn'] = (postBalanceSol - preBalanceSol).toString();
+        end['amt_earn'] = postBalanceSol.minus(preBalanceSol).toString();
+        console.log('Amount Earn:', end['amt_earn']);
       }
       
       proceedsTokenAccount = proceeds
@@ -659,21 +662,22 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
 
       if (preBalance && postBalance) {
         // Convert string balances to BigInt
-        let preBalanceBigInt = BigInt(preBalance);
-        let postBalanceBigInt = BigInt(postBalance);
+        let preBalanceDecimal = new Decimal(preBalance);
+        let postBalanceDecimal = new Decimal(postBalance);
 
-        // Assuming the balances are in the smallest unit of the token, we convert them to a more 'readable' format.
-        preBalanceSol = preBalanceBigInt / BigInt(Math.pow(10, pmt_decimals));
-        postBalanceSol = postBalanceBigInt / BigInt(Math.pow(10, pmt_decimals));
+        
+        preBalanceSol = preBalanceDecimal.dividedBy(Decimal.pow(10, pmt_decimals));
+        postBalanceSol = postBalanceDecimal.dividedBy(Decimal.pow(10, pmt_decimals));
 
-        console.log('Pre Balance:', preBalanceSol);
-        console.log('Post Balance:', postBalanceSol);
+        console.log('Pre Balance (volume):', preBalanceSol);
+        console.log('Post Balance (volume):', postBalanceSol);
       } else {
         console.log('Token account not found in transaction');
       }
       
-      if(preBalanceSol && postBalanceSol) {
-        end['amt_volume'] = (preBalanceSol - postBalanceSol).toString();
+      if(preBalanceSol) {
+        end['amt_volume'] = (preBalanceSol).toString();
+        console.log('Amount Volume:', end['amt_volume']);
       }
       
       axios.post('https://raffflytics.ngrok.dev/rcv-endings-gcp', end, {
