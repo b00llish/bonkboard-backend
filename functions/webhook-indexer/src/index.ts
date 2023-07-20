@@ -20,14 +20,52 @@ import {
 import {FR_CODER, FR_PROGRAM_ID, CONNECTION, getAccountKey} from './utils';
 
 import axios from 'axios';
+
 // This could be a UUID or any secret token.
+// import './env';
 const secretToken = 'your-secret-token-here';
 
-// import './env';
+const DEV_URL = 'https://raffflytics-dev.ngrok.dev';
+const PROD_URL = 'https://rafffle-tasks-staging-5faa72a875f3.herokuapp.com';
+
+async function postRequest(url: string, type: any, data: {}, secretToken: any) {
+  let postData = {};
+
+  if (type) {
+    postData = {
+      type: type,
+      data: data
+    };
+  } else {
+    postData = data;
+  }
+
+  return axios.post(url, postData, {
+    headers: {
+      'Authorization': `Bearer ${secretToken}`,
+    }
+  })
+  .then((res) => {
+    console.log(`Status: ${res.status}`);
+    console.log('Body: ', res.data);
+  })
+  .catch((err) => {
+    console.error(err);
+  });
+}
+
+async function postToBothEndpoints(endpoint: string, type: any, data: {}, secretToken: any) {
+  const devUrl = `${DEV_URL}/${endpoint}`;
+  const prodUrl = `${PROD_URL}/${endpoint}`;
+
+  await postRequest(devUrl, type, data, secretToken);
+  await postRequest(prodUrl, type, data, secretToken);
+}
+
 
 export async function handleWebhookIndexer(req: Request, res: Response) {
   const txResponses: TransactionResponseJson[] = req.body;
-
+  
   for (const txResponse of txResponses) {
     const signature = txResponse.transaction.signatures[0];
     // const slot = txResponse.slot;
@@ -46,7 +84,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
       const ixProgram = accountKeys[ix.programIdIndex];
 
       if (ixProgram !== FR_PROGRAM_ID.toString()) {
-        console.log(`Program ID ${ixProgram} is not Foxy Rafffle`);
+        // console.log(`Program ID ${ixProgram} is not Foxy Rafffle`);
         continue;
       }
 
@@ -147,24 +185,26 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
           console.log(`createdTimestamp is null or undefined for tx: ${signature}`);
         }
 
-        axios.post(
-          'https://raffflytics.ngrok.dev/rcv-raffles-gcp',
-          {
-            type: 'createRaffle',
-            data: raffle,
-          },
-          {
-            headers: {
-                'Authorization': `Bearer ${secretToken}`,
-            }
-          }
-          )
-          .then((res) => {
-              console.log(`Status: ${res.status}`);
-              console.log('Body: ', res.data);
-          }).catch((err) => {
-              console.error(err);
-          });
+        postToBothEndpoints('rcv-raffles-gcp', 'createRaffle', raffle, secretToken);
+
+        // axios.post(
+        //   'https://raffflytics.ngrok.dev/rcv-raffles-gcp',
+        //   {
+        //     type: 'createRaffle',
+        //     data: raffle,
+        //   },
+        //   {
+        //     headers: {
+        //         'Authorization': `Bearer ${secretToken}`,
+        //     }
+        //   }
+        //   )
+        //   .then((res) => {
+        //       console.log(`Status: ${res.status}`);
+        //       console.log('Body: ', res.data);
+        //   }).catch((err) => {
+        //       console.error(err);
+        //   });
 
         // const proceedsMint = getAccountKey(
         //   FOXY_RAFFLE_IDL,
@@ -232,23 +272,25 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
           // tx_id: signature.toString(),
         };
 
+        postToBothEndpoints('rcv-raffles-gcp', 'addPrize', nft, secretToken);
 
-        axios.post('https://raffflytics.ngrok.dev/rcv-raffles-gcp',
-        {
-          type: 'addPrize',
-          data: nft,
-        }, 
-        {
-        headers: {
-            'Authorization': `Bearer ${secretToken}`,
-        }
-        })
-        .then((res) => {
-            console.log(`Status: ${res.status}`);
-            console.log('Body: ', res.data);
-        }).catch((err) => {
-            console.error(err);
-        }); 
+
+      //   axios.post('https://raffflytics.ngrok.dev/rcv-raffles-gcp',
+      //   {
+      //     type: 'addPrize',
+      //     data: nft,
+      //   }, 
+      //   {
+      //   headers: {
+      //       'Authorization': `Bearer ${secretToken}`,
+      //   }
+      //   })
+      //   .then((res) => {
+      //       console.log(`Status: ${res.status}`);
+      //       console.log('Body: ', res.data);
+      //   }).catch((err) => {
+      //       console.error(err);
+      //   }); 
       }
 
       if (decodedIx.name === 'extendRaffle') {
@@ -270,27 +312,29 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
       
         let extension = {
           account: account.toString(),
-          new_end_epoch: newEndTimestamp.toString(),
+          updated_end_epoch: newEndTimestamp.toString(),
+          // updated_dt_end: // calculated from epoch,
           tx_id: signature.toString(),
         };
 
-
-        axios.post('https://raffflytics.ngrok.dev/rcv-raffle-updates-gcp',
-        {
-          type: 'extendRaffle',
-          data: extension,
-        }, 
-        {
-        headers: {
-            'Authorization': `Bearer ${secretToken}`,
-        }
-        })
-        .then((res) => {
-            console.log(`Status: ${res.status}`);
-            console.log('Body: ', res.data);
-        }).catch((err) => {
-            console.error(err);
-        }); 
+        postToBothEndpoints('rcv-raffle-updates-gcp', 'extendRaffle', extension, secretToken);
+        
+        // axios.post('https://raffflytics.ngrok.dev/rcv-raffle-updates-gcp',
+        // {
+        //   type: 'extendRaffle',
+        //   data: extension,
+        // }, 
+        // {
+        // headers: {
+        //     'Authorization': `Bearer ${secretToken}`,
+        // }
+        // })
+        // .then((res) => {
+        //     console.log(`Status: ${res.status}`);
+        //     console.log('Body: ', res.data);
+        // }).catch((err) => {
+        //     console.error(err);
+        // }); 
 
       }
 
@@ -311,33 +355,34 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
         const newPrice = updateRaffleIx.price;
         console.log(`New end timestamp: ${newPrice.toString()}`);
 
-        const newSupply = updateRaffleIx.price;
+        const newSupply = updateRaffleIx.supply;
         console.log(`New end timestamp: ${newSupply.toString()}`);
       
         let update = {
           account: account.toString(),
-          new_price: newPrice.toString(),
-          new_supply: newSupply.toString(),
+          updated_tix_price: newPrice.toString(),
+          updated_tix_total: newSupply.toString(),
           tx_id: signature.toString(),
         };
 
+        postToBothEndpoints('rcv-raffle-updates-gcp', 'updateRaffle', update, secretToken);
 
-        axios.post('https://raffflytics.ngrok.dev/rcv-raffle-updates-gcp',
-        {
-          type: 'updateRaffle',
-          data: update,
-        }, 
-        {
-        headers: {
-            'Authorization': `Bearer ${secretToken}`,
-        }
-        })
-        .then((res) => {
-            console.log(`Status: ${res.status}`);
-            console.log('Body: ', res.data);
-        }).catch((err) => {
-            console.error(err);
-        }); 
+        // axios.post('https://raffflytics.ngrok.dev/rcv-raffle-updates-gcp',
+        // {
+        //   type: 'updateRaffle',
+        //   data: update,
+        // }, 
+        // {
+        // headers: {
+        //     'Authorization': `Bearer ${secretToken}`,
+        // }
+        // })
+        // .then((res) => {
+        //     console.log(`Status: ${res.status}`);
+        //     console.log('Body: ', res.data);
+        // }).catch((err) => {
+        //     console.error(err);
+        // }); 
 
       }
         
@@ -462,32 +507,34 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
           console.log(`createdTimestamp is null or undefined for tx: ${signature}`);
         }
 
-        axios.post('https://raffflytics.ngrok.dev/rcv-buys-gcp', buy, {
-        headers: {
-            'Authorization': `Bearer ${secretToken}`,
-        }
-        })
-        .then((res) => {
-            console.log(`Status: ${res.status}`);
-            console.log('Body: ', res.data);
-        }).catch((err) => {
-            console.error(err);
-        });
+        postToBothEndpoints('rcv-buys-gcp', null, buy, secretToken);
+
+        // axios.post('https://raffflytics.ngrok.dev/rcv-buys-gcp', buy, {
+        // headers: {
+        //     'Authorization': `Bearer ${secretToken}`,
+        // }
+        // })
+        // .then((res) => {
+        //     console.log(`Status: ${res.status}`);
+        //     console.log('Body: ', res.data);
+        // }).catch((err) => {
+        //     console.error(err);
+        // });
       }
     
     if (decodedIx.name === 'cancelRaffleV2') {
       const cancelRaffleV2Ix = decodedIx.data as cancelRaffleV2InstructionDecoded;
-      // console.log(`cancelRaffleV2Ix: ${JSON.stringify(cancelRaffleV2Ix)}`);
+      console.log(`cancelRaffleV2Ix: ${JSON.stringify(cancelRaffleV2Ix)}`);
       
       const raffle = getAccountKey(
           FOXY_RAFFLE_IDL,
           'raffle',
-          'cancelRaffleV2Ix',
+          'cancelRaffleV2',
           ix.accounts,
           accountKeys
         );
 
-      // console.log(`Raffle (cancel): ${raffle.toString()}`);
+      console.log(`Raffle (cancel): ${raffle.toString()}`);
 
       let cancel = {
         //dt_cancel: // calculated from epoch_time
@@ -502,17 +549,19 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
         console.log(`createdTimestamp is null or undefined for tx: ${signature}`);
       }
 
-      axios.post('https://raffflytics.ngrok.dev/rcv-cancels-gcp', cancel, {
-      headers: {
-          'Authorization': `Bearer ${secretToken}`,
-      }
-      })
-      .then((res) => {
-          console.log(`Status: ${res.status}`);
-          console.log('Body: ', res.data);
-      }).catch((err) => {
-          console.error(err);
-      });
+      postToBothEndpoints('rcv-cancels-gcp', null, cancel, secretToken);
+
+      // axios.post('https://raffflytics.ngrok.dev/rcv-cancels-gcp', cancel, {
+      // headers: {
+      //     'Authorization': `Bearer ${secretToken}`,
+      // }
+      // })
+      // .then((res) => {
+      //     console.log(`Status: ${res.status}`);
+      //     console.log('Body: ', res.data);
+      // }).catch((err) => {
+      //     console.error(err);
+      // });
     }
 
     
@@ -601,12 +650,14 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
         console.log(`createdTimestamp is null or undefined for tx: ${signature}`);
       }
 
-      axios.post('https://raffflytics.ngrok.dev/rcv-winners-gcp', raffleWinner, {
-      headers: {
-          'Authorization': `Bearer ${secretToken}`,
-          }
-        }
-      )
+      postToBothEndpoints('rcv-winners-gcp', null, raffleWinner, secretToken);
+
+      // axios.post('https://raffflytics.ngrok.dev/rcv-winners-gcp', raffleWinner, {
+      // headers: {
+      //     'Authorization': `Bearer ${secretToken}`,
+      //     }
+      //   }
+      // )
     }
 
     if (decodedIx.name === 'collectProceedsV2') {
@@ -773,12 +824,13 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
         console.log('Amount Volume:', end['amt_volume']);
       }
       
-      axios.post('https://raffflytics.ngrok.dev/rcv-endings-gcp', end, {
-        headers: {
-          'Authorization': `Bearer ${secretToken}`,
-        }
-      })
-    
+      postToBothEndpoints('rcv-endings-gcp', null, end, secretToken);
+      
+      // axios.post('https://raffflytics.ngrok.dev/rcv-endings-gcp', end, {
+      //   headers: {
+      //     'Authorization': `Bearer ${secretToken}`,
+      //   }
+      // })
   }
     
     if (decodedIx.name === 'closeEntrants') {
