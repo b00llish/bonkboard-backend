@@ -157,8 +157,13 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
 
         const postTokenBalances = txResponse?.meta?.postTokenBalances;
         if (postTokenBalances && postTokenBalances.length > 0) {
-            pmt_decimals = postTokenBalances[0]?.uiTokenAmount?.decimals?.toString();
-            // console.log(`Payment decimals: ${pmt_decimals}`);
+            const matchedBalance = postTokenBalances.find((balance) => balance.mint === proceedsMint.toString());
+            if(matchedBalance){
+                pmt_decimals = matchedBalance.uiTokenAmount?.decimals?.toString();
+                console.log(`Payment decimals: ${pmt_decimals}`);
+            } else {
+                console.log(`No matching mint found in postTokenBalances.`);
+            }
         } else {
             console.log(`postTokenBalances is empty or doesn't exist.`);
         }
