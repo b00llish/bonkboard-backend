@@ -25,3 +25,5 @@
 .git
 .gitignore
 node_modules
+justfile
+.env

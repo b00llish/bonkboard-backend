@@ -20,13 +20,17 @@ import {
 import {FR_CODER, FR_PROGRAM_ID, CONNECTION, getAccountKey} from './utils';
 
 import axios from 'axios';
-
+import dotenv from 'dotenv';
+dotenv.config();
 // This could be a UUID or any secret token.
 // import './env';
+// const secretToken = process.env.SECRET_TOKEN;
 const secretToken = 'your-secret-token-here';
 
-const DEV_URL = 'https://raffflytics-dev.ngrok.dev';
-const PROD_URL = 'https://rafffle-tasks-staging-5faa72a875f3.herokuapp.com';
+  // const DEV_URL = 'https://raffflytics.ngrok.dev';
+  const PROD_URL = 'https://rafffle-tasks-staging-5faa72a875f3.herokuapp.com';
+  const DEV_URL = 'http://172.234.19.160:5000';
+  // const LINUX_SERVER_URL = 'http://172.234.19.160:5000';
 
 async function postRequest(url: string, type: any, data: {}, secretToken: any) {
   let postData = {};
@@ -57,9 +61,11 @@ async function postRequest(url: string, type: any, data: {}, secretToken: any) {
 async function postToBothEndpoints(endpoint: string, type: any, data: {}, secretToken: any) {
   const devUrl = `${DEV_URL}/${endpoint}`;
   const prodUrl = `${PROD_URL}/${endpoint}`;
+  // const linuxServerUrl = `${LINUX_SERVER_URL}/${endpoint}`;
 
   await postRequest(devUrl, type, data, secretToken);
   await postRequest(prodUrl, type, data, secretToken);
+  // await postRequest(linuxServerUrl, type, data, secretToken);
 }
 
 
@@ -246,32 +252,32 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
           accountKeys
         );
 
-        // console.log(`NFT mint: ${prizeMint.toString()}`);
+        console.log(`NFT mint: ${prizeMint.toString()}`);
 
         // does not appear to actually be metadata, e.g., Cc2ML8qu1AktwiFhvLPJQpy2AT4k2VpMWw3gggx1eTgr
-        // const nftMetadata = getAccountKey(
-        //   FOXY_RAFFLE_IDL,
-        //   'nftMetadata',
-        //   'addPrizeV2',
-        //   ix.accounts,
-        //   accountKeys
-        // );
+        const nftMetadata = getAccountKey(
+          FOXY_RAFFLE_IDL,
+          'nftMetadata',
+          'addPrizeV2',
+          ix.accounts,
+          accountKeys
+        );
 
-        // console.log(`NFT metadata: ${nftMetadata.toString()}`);
+        console.log(`NFT metadata: ${nftMetadata.toString()}`);
 
         // also not sure what this is, e.g., HWdrD3octHGH53R9F9WiNqVjai93C6dLuqdnXicxGWL6
-        // const edition = getAccountKey(
-        //   FOXY_RAFFLE_IDL,
-        //   'edition',
-        //   'addPrizeV2',
-        //   ix.accounts,
-        //   accountKeys
-        // );
+        const edition = getAccountKey(
+          FOXY_RAFFLE_IDL,
+          'edition',
+          'addPrizeV2',
+          ix.accounts,
+          accountKeys
+        );
 
-        // console.log(`NFT edition: ${edition.toString()}`);
+        console.log(`NFT edition: ${edition.toString()}`);
 
         let nft = {
-          account: raffleAccount.toString(),
+          account: raffleAccount.toString(),  
           nft_mint: prizeMint.toString(),
           // metadata: nftMetadata.toString(),
           // tx_id: signature.toString(),
