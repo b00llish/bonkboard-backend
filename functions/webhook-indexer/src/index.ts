@@ -652,6 +652,7 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
         // dt_win: // calculated from epoch_time
         account: raffle.toString(),
         winner_wallet: winner.toString(),
+        winning_ticket: ticketIndex.toString(),
         epoch_time: createdTimestamp ? createdTimestamp.toString() : undefined,
       };
 
