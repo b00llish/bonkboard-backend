@@ -650,9 +650,10 @@ export async function handleWebhookIndexer(req: Request, res: Response) {
 
       let raffleWinner = {
         // dt_win: // calculated from epoch_time
+        tx_id: signature.toString(),
         account: raffle.toString(),
         winner_wallet: winner.toString(),
-        winning_ticket: ticketIndex.toString(),
+        ticket_index: ticketIndex.toString(),
         epoch_time: createdTimestamp ? createdTimestamp.toString() : undefined,
       };
 
